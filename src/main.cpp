@@ -1,5 +1,6 @@
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/core.hpp>
 #include <iostream>
 
 using namespace std;
@@ -15,6 +16,14 @@ int main(int argc, char** argv) {
     Mat image;
     image = imread(argv[1], CV_LOAD_IMAGE_COLOR);
 
+    if (!image.data) {
+        cout << "Could not open or find the image." << endl;
+        return -1;
+    }
+
+    namedWindow("Display window", WINDOW_AUTOSIZE);
+    imshow("Display window", image);
+    waitKey(0);
 
     return 0;
 }
