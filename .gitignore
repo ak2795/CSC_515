@@ -1,0 +1,5 @@
+src/CMakeCache.txt
+src/cmake_install.cmake
+main
+main.o
+CMakeFile/*
