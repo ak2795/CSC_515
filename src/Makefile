@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named main
+# Target rules for targets named kmeans
 
 # Build rule for target.
-main: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 main
-.PHONY : main
+kmeans: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 kmeans
+.PHONY : kmeans
 
 # fast build rule for target.
-main/fast:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
-.PHONY : main/fast
+kmeans/fast:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
+.PHONY : kmeans/fast
 
-main.o: main.cpp.o
+kmeans.o: kmeans.cpp.o
 
-.PHONY : main.o
+.PHONY : kmeans.o
 
 # target to build an object file
-main.cpp.o:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.cpp.o
-.PHONY : main.cpp.o
+kmeans.cpp.o:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans.cpp.o
+.PHONY : kmeans.cpp.o
 
-main.i: main.cpp.i
+kmeans.i: kmeans.cpp.i
 
-.PHONY : main.i
+.PHONY : kmeans.i
 
 # target to preprocess a source file
-main.cpp.i:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.cpp.i
-.PHONY : main.cpp.i
+kmeans.cpp.i:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans.cpp.i
+.PHONY : kmeans.cpp.i
 
-main.s: main.cpp.s
+kmeans.s: kmeans.cpp.s
 
-.PHONY : main.s
+.PHONY : kmeans.s
 
 # target to generate assembly for a file
-main.cpp.s:
-	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.cpp.s
-.PHONY : main.cpp.s
+kmeans.cpp.s:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans.cpp.s
+.PHONY : kmeans.cpp.s
 
 # Help Target
 help:
@@ -158,10 +158,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... main"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
+	@echo "... kmeans"
+	@echo "... kmeans.o"
+	@echo "... kmeans.i"
+	@echo "... kmeans.s"
 .PHONY : help
 
 
