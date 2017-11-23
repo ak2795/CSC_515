@@ -1,3 +1,0 @@
-/Users/andrewkim/Desktop/CSC_515/src/CMakeFiles/rebuild_cache.dir
-/Users/andrewkim/Desktop/CSC_515/src/CMakeFiles/edit_cache.dir
-/Users/andrewkim/Desktop/CSC_515/src/CMakeFiles/main.dir
