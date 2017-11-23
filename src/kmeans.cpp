@@ -2,6 +2,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
 #include <iostream>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 using namespace std;
 using namespace cv;
@@ -13,6 +15,12 @@ using namespace cv;
  * */
 
 int main(int argc, char** argv) {
+    struct rusage usage;
+    struct timeval start, end;
+
+    getrusage(RUSAGE_SELF, &usage);
+    start = usage.ru_utime;
+
     const int MAX_CLUSTERS = 5;
     Scalar colorTab[] = {
         Scalar (0, 0, 255),
@@ -56,6 +64,13 @@ int main(int argc, char** argv) {
         }
         imshow("clusters", img);
         char key = (char)waitKey();
+
+        
+        getrusage(RUSAGE_SELF, &usage);
+        end = usage.ru_utime;
+        printf("Started at: %ld.%lds\n", start.tv_sec, start.tv_usec);
+        printf("Ended at: %ld.%lds\n", end.tv_sec, end.tv_usec); 
+        
         if( key == 27 || key == 'q' || key == 'Q' ) // 'ESC'
             break;
     }
