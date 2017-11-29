@@ -8,12 +8,6 @@
 using namespace std;
 using namespace cv;
 
-/*
- * This program runs kmeans clustering.
- * Generates ane image with random points, then assigns a random number of cluster centers
- * and uses kmeans to move those cluster centers to the correct location. *
- * */
-
 int kmeans_test() {
    struct rusage usage;
    struct timeval start, end;
@@ -77,29 +71,5 @@ int kmeans_test() {
 }
 
 int main(int argc, char** argv) {
-   if (argc != 2) {
-      cout << "Must enter an image file" << endl;
-      return -1;
-   }
-
-   Mat src, src_gray, dst;
-   src = imread(argv[1], CV_LOAD_IMAGE_COLOR);
-
-   if (!src.data) {
-      cout << "Could not read image data" << endl;
-      return -1;
-   }
-
-   // change to grayscale image
-   cvtColor(src, src_gray, CV_BGR2GRAY);
-
-   // set threshold
-   threshold(src_gray, dst, 100, 255, 0);
-
-   // create window and display it
-   namedWindow("Threshold Test", CV_WINDOW_AUTOSIZE);
-   imshow("Threshold Test", dst);
-   waitKey(0);
-
-   return 0;
+     
 }
