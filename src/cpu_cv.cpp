@@ -8,68 +8,66 @@
 using namespace std;
 using namespace cv;
 
-int kmeans_test() {
-   struct rusage usage;
-   struct timeval start, end;
+/*
+ * Apply the mask to the image and output the result
+ * */
+Mat maskImg(String imPath, String mskPath) {
+    Mat mask, image, result;
+    
+    // Read in the mask and the image given the paths
+    mask = imread(mskPath);
+    image = imread(imPath);
+    // Grayscale the mask
+    cvtColor(mask, mask, COLOR_RGB2GRAY);
+    
+    // Bitwise AND the mask and image
+    bitwise_and(image, image, result, mask=mask);
+   
+    // Testing for correct image reads
+    /*
+    imshow("Mask", mask);
+    imshow("Image", image);
+    imshow("Result", result);
+    waitKey(0);
+    */
 
-   getrusage(RUSAGE_SELF, &usage);
-   start = usage.ru_utime;
+    return result;
+}
 
-   const int MAX_CLUSTERS = 5;
-   Scalar colorTab[] = {
-      Scalar (0, 0, 255),
-      Scalar (0, 255, 0),
-      Scalar (255, 100, 100),
-      Scalar (255, 0, 255),
-      Scalar (255, 255, 0)
-   };
+/*
+ * Apply the inverted version of the mask to the image and output the result
+ * */
 
-   Mat img(500, 500, CV_8UC3);
-   RNG rng(12345);
+Mat maskImgInverted(String imPath, String mskPath) {
+    Mat mask, invMask, image, result;
 
-   for (;;) {
-      int k, clusterCount = rng.uniform(2, MAX_CLUSTERS);
-      int i, sampleCount = rng.uniform(1, 1001);
-      Mat points(sampleCount, 1, CV_32FC2), labels;
+    // Read in the mask and the image given the paths
+    mask = imread(mskPath);
+    image = imread(imPath);
+    // Grayscale the mask
+    cvtColor(mask, mask, COLOR_RGB2GRAY);
+    // Invert the mask
+    threshold(mask, invMask, 0, 255, 1);
 
-      clusterCount = MIN(clusterCount, sampleCount);
-      Mat centers;
-
-      /* Generate a random sample from multigaussian distribution */
-      for (k = 0; k < clusterCount; k++) {
-           Point center;
-           center.x = rng.uniform (0, img.cols);
-           center.y = rng.uniform (0, img.rows);
-           Mat pointChunk = points.rowRange(k * sampleCount / clusterCount, k == clusterCount - 1 ?
-                                            sampleCount : (k + 1) * sampleCount / clusterCount);
-           rng.fill(pointChunk, RNG::NORMAL, Scalar(center.x, center.x), Scalar(img.cols * 0.05, img.rows * 0.05));
-      }
-
-      randShuffle(points, 1, &rng);
-      kmeans(points, clusterCount, labels,
-           TermCriteria( TermCriteria::EPS+TermCriteria::COUNT, 10, 1.0),
-              3, KMEANS_PP_CENTERS, centers);
-      img = Scalar::all(0);
-      for( i = 0; i < sampleCount; i++ )
-      {
-           int clusterIdx = labels.at<int>(i);
-           Point ipt = points.at<Point2f>(i);
-           circle( img, ipt, 2, colorTab[clusterIdx], FILLED, LINE_AA );
-      }
-      imshow("clusters", img);
-      char key = (char)waitKey();
-
-
-      getrusage(RUSAGE_SELF, &usage);
-      end = usage.ru_utime;
-
-      if( key == 27 || key == 'q' || key == 'Q' ) // 'ESC'
-           break;
-   }
-
-   return 0;
+    // Bitwise AND the mask and image
+    bitwise_and(image, image, result, mask=invMask);
+    
+    // Testing for correct image reads
+    
+    imshow("Mask", invMask);
+    imshow("Image", image);
+    imshow("Result", result);
+    waitKey(0);
+    
+    
+    return result;
 }
 
 int main(int argc, char** argv) {
-     
+    Mat test;
+
+    test = maskImg("PartA/s1.jpg", "PartA_Masks/s1.jpg");
+    test = maskImgInverted("PartA/s1.jpg", "PartA_Masks/s1.jpg");
+
+    return 0; 
 }
