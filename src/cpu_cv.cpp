@@ -71,20 +71,22 @@ vector<Pixel> createTrainingSet() {
 
     // For every image in the training folder mask images for strawberry and non-strawberry pixels
     // and add them to the training set vector
-    for (int i = 0; i < 1; i++) {
-        imFile = "PartA/s" + to_string(i + 10) + ".jpg";
-        mskFile = "PartA_Masks/s" + to_string(i + 10) + ".jpg";
+    for (int i = 0; i < 10; i++) {
+        cout << "Image " + to_string(i + 1) << endl;
+        imFile = "PartA/s" + to_string(i + 1) + ".jpg";
+        mskFile = "PartA_Masks/s" + to_string(i + 1) + ".jpg";
         strawberry = maskImg(imFile, mskFile);
         nonStrawberry = maskImgInverted(imFile, mskFile);
         
 
         // ********** STRAWBERRY PIXELS ***********
+        cout << "Parsing strawberry pixels for training set." << endl;
+
         // split the r, g, and b channels and create new pixel object
         int channels = strawberry.channels();
         int sRows = strawberry.rows;
         int sCols = strawberry.cols * channels;
 
-        
         // Check if continuous
         if (strawberry.isContinuous()) {
             sCols *= sRows;
@@ -129,18 +131,90 @@ vector<Pixel> createTrainingSet() {
                     count++;
             }
         }
+        
+        // ********** NON-STRAWBERRY PIXELS ***********
+        cout << "Parsing non-strawberry pixels for training set." << endl;
+
+        // split the r, g, and b channels and create new pixel object
+        channels = nonStrawberry.channels();
+        sRows = nonStrawberry.rows;
+        sCols = nonStrawberry.cols * channels;
+
+        // Check if continuous
+        if (strawberry.isContinuous()) {
+            sCols *= sRows;
+            sRows = 1;
+        }
+       
+        r = 0, g = 0, b = 0; // to keep track of the rgb values
+        count = 0; // keep track of columns (b = 0; g = 1; r = 2)
+        p = nonStrawberry.ptr<unsigned char>();
+
+        for (int j = 0; j < sRows; j++) {
+            for (int k = 0; k < sCols; k++, p++) {
+                // save the values of b, g, and r regardless of value
+                switch(count) {
+                    case 0:
+                        b = *p;
+                        break;
+                    case 1:
+                        g = *p;
+                        break;
+                    case 2:
+                        r = *p;
+                        break;
+                    default:
+                        break;
+                }
+               
+                if (count == 2) {
+                    if (r || g || b) {
+
+                        // Create a Pixel object
+                        Pixel pixel = {0, r, g, b};
+                        
+                        // Add new pixel to the vector
+                        trainingSet.push_back(pixel);
+                    }
+                    b = g = r = 0;
+                    count = 0;
+                }
+
+                else
+                    count++;
+            }
+        }
     }
-    cout << trainingSet.size() << endl;
+    cout << "Training set size: " + to_string(trainingSet.size()) << endl;
     return trainingSet;
 }
 
+/* 
+ * Return the Euclidean distance between two sets of rgb values
+ **/
+unsigned int findDistance (unsigned int r1, unsigned int g1, unsigned int b1, 
+                            unsigned int r2, unsigned int g2, unsigned int b2) {
+    unsigned int distance;
+    distance = sqrt((r2 - r1) * (r2 - r1) +
+                    (g2 - g1) * (g2 - g1) +
+                    (b2 - b1) * (b2 - b1));
 
-int main(int argc, char** argv) {
+    return distance;
+}
+
+/*
+ * Do a comparision for each pixel in input image with every Pixel in the training set 
+ * and classify the new point
+ * */
+
+int main (int argc, char** argv) {
     Mat strawberry, nonStrawberry;
+    vector<Pixel> trainingSet;
+    
     // Get the images for the strawberry and non-strawberry
     strawberry = maskImg("PartA/s1.jpg", "PartA_Masks/s1.jpg");
     nonStrawberry = maskImgInverted("PartA/s1.jpg", "PartA_Masks/s1.jpg");
-    createTrainingSet();
-
+    trainingSet = createTrainingSet();
+    
     return 0; 
 }
