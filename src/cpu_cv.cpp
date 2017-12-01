@@ -9,17 +9,11 @@
 using namespace std;
 using namespace cv;
 
-// Structure for a Point
-struct Point {
-    int cluster_id;
-    unsigned char r, g, b;
-    int distance;
-};
-
 // Structure for a Pixel
 struct Pixel {
     int cluster_id;
     unsigned char r, g, b;
+    unsigned int distance;
 };
 
 /*
@@ -39,6 +33,7 @@ Mat maskImg(String imPath, String mskPath) {
 
     return result;
 }
+
 
 /*
  * Apply the inverted version of the mask to the image and output the result
@@ -71,10 +66,10 @@ vector<Pixel> createTrainingSet() {
 
     // For every image in the training folder mask images for strawberry and non-strawberry pixels
     // and add them to the training set vector
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 1; i++) {
         cout << "Image " + to_string(i + 1) << endl;
-        imFile = "PartA/s" + to_string(i + 1) + ".jpg";
-        mskFile = "PartA_Masks/s" + to_string(i + 1) + ".jpg";
+        imFile = "PartA/s" + to_string(i + 10) + ".jpg";
+        mskFile = "PartA_Masks/s" + to_string(i + 10) + ".jpg";
         strawberry = maskImg(imFile, mskFile);
         nonStrawberry = maskImgInverted(imFile, mskFile);
         
@@ -118,7 +113,7 @@ vector<Pixel> createTrainingSet() {
                     if (r || g || b) {
 
                         // Create a Pixel object
-                        Pixel pixel = {1, r, g, b};
+                        Pixel pixel = {1, r, g, b, 0};
                         
                         // Add new pixel to the vector
                         trainingSet.push_back(pixel);
@@ -171,7 +166,7 @@ vector<Pixel> createTrainingSet() {
                     if (r || g || b) {
 
                         // Create a Pixel object
-                        Pixel pixel = {0, r, g, b};
+                        Pixel pixel = {0, r, g, b, 0};
                         
                         // Add new pixel to the vector
                         trainingSet.push_back(pixel);
@@ -189,11 +184,19 @@ vector<Pixel> createTrainingSet() {
     return trainingSet;
 }
 
+/*
+ * Comparison between Points for sorting
+ * */
+bool comparison(Pixel a, Pixel b) {
+    bool result = (a.distance < b.distance);
+    return result;
+}
+
 /* 
  * Return the Euclidean distance between two sets of rgb values
  **/
-unsigned int findDistance (unsigned int r1, unsigned int g1, unsigned int b1, 
-                            unsigned int r2, unsigned int g2, unsigned int b2) {
+unsigned int findDistance(unsigned int r1, unsigned int g1, unsigned int b1, 
+                           unsigned int r2, unsigned int g2, unsigned int b2) {
     unsigned int distance;
     distance = sqrt((r2 - r1) * (r2 - r1) +
                     (g2 - g1) * (g2 - g1) +
@@ -203,18 +206,108 @@ unsigned int findDistance (unsigned int r1, unsigned int g1, unsigned int b1,
 }
 
 /*
- * Do a comparision for each pixel in input image with every Pixel in the training set 
- * and classify the new point
+ * Do a comparision for the given pixel against every Pixel object in 
  * */
+unsigned int classifyPixel(vector<Pixel> trainingSet, int k, 
+                            unsigned int r, unsigned int g, unsigned int b) {
+     
+    unsigned int n = trainingSet.size();
+    // Go through the training set and find the distance between the input r, g, b
+    for (int i = 0; i < n; i++) {
+        trainingSet[i].distance = findDistance(trainingSet[i].r, trainingSet[i].g, trainingSet[i].b, r, g, b);
+    }
 
-int main (int argc, char** argv) {
-    Mat strawberry, nonStrawberry;
+    // Sort the pixels by distance (shortest first)
+    sort(trainingSet.begin(), trainingSet.end(), comparison);
+
+    // Keep track of the frequencies for each classification
+    int freq0 = 0;
+    int freq1 = 1;
+   
+    for (int i = 0; i < k; i++) {
+        if (trainingSet[i].cluster_id == 0)
+            freq0++;
+        else if (trainingSet[i].cluster_id == 1)
+            freq1++;
+    }
+
+    return (freq0 > freq1 ? 0 : 1);
+}
+
+
+int main(int argc, char** argv) {
+    Mat input, result;
     vector<Pixel> trainingSet;
-    
-    // Get the images for the strawberry and non-strawberry
-    strawberry = maskImg("PartA/s1.jpg", "PartA_Masks/s1.jpg");
-    nonStrawberry = maskImgInverted("PartA/s1.jpg", "PartA_Masks/s1.jpg");
+    int channels, sRows, sCols;
+    int strawberryCounter = 0;
+
+    // Read in input image to be classified
+    // Check if there is an input image from the user
+    if (argc < 2) {
+        cout << "Must input image file" << endl;
+        return -1;
+    }
+
+    input = imread(argv[1]);
+    // Check if the input has valid image data
+    if (!input.data) {
+        cout << "Input does not hold valid data" << endl;
+        return -1;
+    }
+
+    // Create the training set
     trainingSet = createTrainingSet();
-    
+
+    // split the r, g, and b channels
+    channels = input.channels();
+    sRows = input.rows;
+    sCols = input.cols * channels;
+
+    // Check if continuous
+    if (input.isContinuous()) {
+        sCols *= sRows;
+        sRows = 1;
+    }
+   
+    unsigned char r = 0, g = 0, b = 0; // to keep track of the rgb values
+    int count = 0; // keep track of columns (b = 0; g = 1; r = 2)
+    unsigned char* p = input.ptr<unsigned char>();
+
+    for (int j = 0; j < sRows; j++) {
+        for (int k = 0; k < sCols; k++, p++) {
+            // save the values of b, g, and r regardless of value
+            switch(count) {
+                case 0:
+                    b = *p;
+                    break;
+                case 1:
+                    g = *p;
+                    break;
+                case 2:
+                    r = *p;
+                    break;
+                default:
+                    break;
+            }
+           
+            if (count == 2) {
+                // Classify the pixel after reading the r, g, and b values
+                int classification = classifyPixel(trainingSet, 5, r, g, b);
+                if (classification)
+                    cout << "Pixel Count: " + to_string(++strawberryCounter) << endl;
+
+                // Reset the values
+                b = g = r = 0;
+                count = 0;
+            }
+
+            else
+                count++;
+        }
+    }
+
+    //imshow("Original", input);
+    //waitKey(0);
+
     return 0; 
 }
