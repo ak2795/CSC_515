@@ -78,21 +78,20 @@ vector<Pixel> createTrainingSet() {
         cout << "Parsing strawberry pixels for training set." << endl;
 
         // split the r, g, and b channels and create new pixel object
+        int channels = strawberry.channels();
         int sRows = strawberry.rows;
         int sCols = strawberry.cols;
 
-        unsigned int r = 0, g = 0, b = 0; // to keep track of the rgb values
+        unsigned char r = 0, g = 0, b = 0; // to keep track of the rgb values
+        unsigned char* p = strawberry.ptr<unsigned char>();
 
         for (int j = 0; j < sRows; j++) {
-            for (int k = 0; k < sCols; k++) {
+            for (int k = 0; k < sCols; k++, p++) {
                 Vec3b color = strawberry.at<Vec3b>(Point(k, j));
                 b = color[0];
                 g = color[1];
                 r = color[2];
                 if (b || g || r) {
-                    //cout << "R:" + to_string(r);
-                    //cout << " G:" + to_string(g);
-                    //cout << " B:" + to_string(b) << endl;
                     // Create a Pixel object
                     Pixel pixel = {1, r, g, b, 0};
                     
@@ -107,20 +106,22 @@ vector<Pixel> createTrainingSet() {
         cout << "Parsing non-strawberry pixels for training set." << endl;
 
         // split the r, g, and b channels and create new pixel object
+        channels = nonStrawberry.channels();
         sRows = nonStrawberry.rows;
-        sCols = nonStrawberry.cols;
+        sCols = nonStrawberry.cols * channels;
        
         r = 0, g = 0, b = 0; // to keep track of the rgb values
+        p = nonStrawberry.ptr<unsigned char>();
         
         for (int j = 0; j < sRows; j++) {
-            for (int k = 0; k < sCols; k++) {
+            for (int k = 0; k < sCols; k++, p++) {
                 Vec3b color = nonStrawberry.at<Vec3b>(Point(k, j));
                 b = color[0];
                 g = color[1];
                 r = color[2];
                 if (b || g || r) {
                     // Create a Pixel object
-                    Pixel pixel = {0, r, g, b, 0};
+                    Pixel pixel = {1, r, g, b, 0};
                     
                     // Add new pixel to the vector
                     trainingSet.push_back(pixel);
@@ -130,7 +131,6 @@ vector<Pixel> createTrainingSet() {
         }
     }
     cout << "Training set size: " + to_string(trainingSet.size()) << endl;
-    
     return trainingSet;
 }
 
@@ -188,7 +188,9 @@ unsigned int classifyPixel(vector<Pixel> trainingSet, int k,
 int main(int argc, char** argv) {
     Mat input;
     vector<Pixel> trainingSet;
-    int sRows, sCols;
+    int channels, sRows, sCols;
+    int strawberryCounter = 0;
+    int resRows, resCols;
 
     // Read in input image to be classified
     // Check if there is an input image from the user
@@ -214,13 +216,17 @@ int main(int argc, char** argv) {
     Mat result(cv::Size(sCols, sRows), CV_8UC1);
     result = 0; // Initialize the matrix to all 0
 
-    unsigned int r = 0, g = 0, b = 0; // to keep track of the rgb values
+    unsigned char r = 0, g = 0, b = 0; // to keep track of the rgb values
+    int pixelCounter = 0;
+    int colCount = 0, rowCount = 0;
 
     cout << sRows << endl;
     cout << sCols << endl;
 
     for (int j = 0; j < sRows; j++) {
         for (int k = 0; k < sCols; k++) {
+            
+            colCount = pixelCounter%resCols;
             // Get the current pixel values of the input image
             Vec3b color = input.at<Vec3b>(Point(k, j));
             b = color[0];
@@ -228,13 +234,12 @@ int main(int argc, char** argv) {
             r = color[2];
             
             // Classify the pixel after reading the r, g, and b values
-            // K = 5
             int classification = classifyPixel(trainingSet, 5, r, g, b);
             if (classification) {
                 // Set the pixel on the result matrix
-                result.at<Vec3b>(Point(k, j)) = color;
+                result.at<Vec3b>(Point(colCount, rowCount)) = color;
                 // Print out the position of the strawberry classified pixels
-                String position = "(" + to_string(k) + "," + to_string(j) + ")";
+                String position = "(" + to_string(colCount) + "," + to_string(rowCount) + ")";
                 cout << "Location: " + position << endl;
             }
         }
