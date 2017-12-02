@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
     sCols = input.cols;
 
     // Create the result matrix with the same dimensions as the input image
-    Mat result(cv::Size(sCols, sRows), CV_8UC1);
+    Mat result(cv::Size(sCols, sRows), CV_8UC3);
     result = 0; // Initialize the matrix to all 0
 
     unsigned int r = 0, g = 0, b = 0; // to keep track of the rgb values
