@@ -1,4 +1,4 @@
-
+#define MAX_TRAININGSETS 1000
 
 typedef struct Pixel {
     int cluster_id;
@@ -6,11 +6,14 @@ typedef struct Pixel {
     unsigned int distance;
 } Pixel;
 
+
+
 typedef struct RGBPixel {
   unsigned char b;
   unsigned char g;
   unsigned char r;
 } RGBPixel;
+
 
 void kernel simple_add(global const int* A, global const int* B,
   global int* C, const int numThreads, const int numPixels
@@ -88,7 +91,7 @@ void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
       }
     }
 
-    for (i = numK; i < trainingSetLength; i++) {
+    for (i = numK; i < 10; i++) {
       trainingPixel = trainingSet[i];
       distance = sqrt((float)(rgbPixel.r - trainingPixel.r) * (rgbPixel.r - trainingPixel.r) +
                     (float)(rgbPixel.g - trainingPixel.g) * (rgbPixel.g - trainingPixel.g) +
@@ -103,7 +106,6 @@ void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
           }
         }
       }
-
     }
     freq0 = 0;
     freq1 = 0;
@@ -114,15 +116,117 @@ void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
       else if (kNearestPixels[i].cluster_id == 1)
         freq1++;
     }
-    if (freq1 > freq0) {
-      image[offset].r = 255;
-      image[offset].g = 255;
-      image[offset].b = 255;
+    if (freq0 > freq1) {
+      image[offset].r = 0;
+      image[offset].g = 0;
+      image[offset].b = 0;
+    }
+    offset += numThreads;
+  }
+}
+
+
+void kernel kNearest2(RGBPixel pixel, unsigned int index,
+  global Pixel *trainingSets,
+  const unsigned int trainingSetLength, const unsigned int numThreads) {
+  unsigned int offset = get_global_id(0);
+  Pixel trainingPixel;
+  __global Pixel *trainingSet = trainingSets + (index * trainingSetLength);
+  while (offset < trainingSetLength) {
+    trainingPixel = trainingSet[offset];
+    trainingSet[offset].distance = sqrt((float)(pixel.r - trainingPixel.r) * (pixel.r - trainingPixel.r) +
+                  (pixel.g - trainingPixel.g) * (pixel.g - trainingPixel.g) +
+                  (pixel.b - trainingPixel.b) * (pixel.b - trainingPixel.b));
+    offset += numThreads;
+  }
+}
+
+
+
+void kernel kNearest4(RGBPixel pixel, global Pixel *trainingSet,
+  const unsigned int trainingSetLength, const unsigned int numThreads) {
+  unsigned int offset = get_global_id(0);
+  Pixel trainingPixel;
+  while (offset < trainingSetLength) {
+    trainingPixel = trainingSet[offset];
+    trainingSet[offset].distance = sqrt((float)(pixel.r - trainingPixel.r) * (pixel.r - trainingPixel.r) +
+                  (pixel.g - trainingPixel.g) * (pixel.g - trainingPixel.g) +
+                  (pixel.b - trainingPixel.b) * (pixel.b - trainingPixel.b));
+    offset += numThreads;
+  }
+}
+
+void kernel kNearest4Phase2(global Pixel *trainingSet,
+  global Pixel *neighbors, const unsigned int trainingSetLength,
+  const unsigned int k, const unsigned int numThreads) {
+
+  unsigned int offset = get_global_id(0);
+  Pixel trainingPixel;
+  unsigned int i, rank = 0;
+  while (offset < trainingSetLength) {
+    trainingPixel = trainingSet[offset];
+    for (i = 0; i < trainingSetLength; i ++) {
+      if (trainingPixel.distance > trainingSet[i].distance) {
+        rank ++;
+      }
+    }
+    if (rank < k) {
+      neighbors[rank] = trainingPixel;
+    }
+    offset += numThreads;
+  }
+}
+
+void kernel kNearest2Phase2(global RGBPixel *image, global Pixel *trainingSetArray,
+  const unsigned int k, const unsigned int trainingSetLength, const unsigned int numThreads,
+  const unsigned int numPixels, const unsigned int indexOffset) {
+
+  unsigned int offset = get_global_id(0);
+  __global Pixel  *trainingSet;
+  unsigned int freq0, freq1, i, j;
+  unsigned int maxDistance = 0, location;
+  Pixel kNearestPixels[k];
+  while (offset < MAX_TRAININGSETS) {
+    freq0 = 0, freq1 = 0;
+    trainingSet = trainingSetArray + (offset * trainingSetLength);
+    for (i = 0; i < k; i ++) {
+      kNearestPixels[i] = trainingSet[i];
+      if (trainingSet[i].distance > maxDistance) {
+        maxDistance = trainingSet[i].distance;
+        location = i;
+      }
+    }
+
+    for (i = k; i < trainingSetLength; i ++) {
+      if (trainingSet[i].distance < maxDistance) {
+        kNearestPixels[location] = trainingSet[i];
+        maxDistance = 0;
+        for (j = 0; j < k; j++) {
+          if (kNearestPixels[j].distance > maxDistance) {
+            maxDistance = kNearestPixels[j].distance;
+            location = j;
+          }
+        }
+      }
+    }
+
+    for (i = 0; i < k; i++) {
+        if (kNearestPixels[i].cluster_id == 0) {
+          freq0++;
+        }
+        else if (kNearestPixels[i].cluster_id == 1) {
+          freq1++;
+        }
+    }
+    if (freq0 > freq1) {
+      image[offset + indexOffset].r = 0;
+      image[offset + indexOffset].g = 0;
+      image[offset + indexOffset].b = 0;
     }
     else {
-      //image[offset].r = 0;
-      //image[offset].g = 0;
-      //image[offset].b = 0;
+    image[offset + indexOffset].r = 255;
+    image[offset + indexOffset].g = 255;
+    image[offset + indexOffset].b = 255;
     }
     offset += numThreads;
   }
@@ -130,18 +234,17 @@ void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
 
 
 
-void kernel kNearest2(const RGBPixel pixel, global Pixel *trainingSet,
-  const unsigned int trainingSetLength, const unsigned int numThreads) {
 
+
+void kernel kNearest5(RGBPixel pixel, global Pixel *trainingSet,
+  const unsigned int trainingSetLength, const unsigned int numThreads) {
   unsigned int offset = get_global_id(0);
-  float maxDistance = 0, distance;
-  unsigned int i, j;
   Pixel trainingPixel;
   while (offset < trainingSetLength) {
     trainingPixel = trainingSet[offset];
     trainingSet[offset].distance = sqrt((float)(pixel.r - trainingPixel.r) * (pixel.r - trainingPixel.r) +
-                  (float)(pixel.g - trainingPixel.g) * (pixel.g - trainingPixel.g) +
-                  (float)(pixel.b - trainingPixel.b) * (pixel.b - trainingPixel.b));
+                  (pixel.g - trainingPixel.g) * (pixel.g - trainingPixel.g) +
+                  (pixel.b - trainingPixel.b) * (pixel.b - trainingPixel.b));
     offset += numThreads;
   }
 }

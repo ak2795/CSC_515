@@ -21,6 +21,7 @@ using namespace cl;
 #include <streambuf>
 #define MAXROWS 5000
 #define MAXCOLS 5000
+#define MAX_TRAININGSETS 1000
 
 /*
  * Apply the mask to the image and output the result
@@ -45,7 +46,10 @@ using namespace cl;
    Program program;
    Buffer bufferImage;
    Buffer bufferTrainingSet;
+   Buffer bufferNeighbors;
+   Buffer bufferBigTrainingSet;
    vector<Pixel> trainingSet;
+   Pixel *bigTrainingSet;
    CommandQueue queue;
  };
 
@@ -223,7 +227,7 @@ using namespace cl;
 
 
 
-GPUData initGPU() {
+GPUData initGPU(uint numThreads) {
   GPUData gpuData;
 
   std::vector<cl::Platform> all_platforms;
@@ -270,7 +274,12 @@ GPUData initGPU() {
 
   gpuData.trainingSet = createTrainingSet(gpuData);
   gpuData.bufferTrainingSet = Buffer(gpuData.context, CL_MEM_READ_WRITE, sizeof(Pixel) * gpuData.trainingSet.size());
-  gpuData.queue.enqueueWriteBuffer(gpuData.bufferTrainingSet, CL_TRUE, 0, sizeof(Pixel) * gpuData.trainingSet.size(), &gpuData.trainingSet[0]);
+  gpuData.queue.enqueueWriteBuffer(gpuData.bufferTrainingSet, CL_TRUE, 0, sizeof(Pixel) * gpuData.trainingSet.size(), gpuData.trainingSet.data());
+  gpuData.bufferBigTrainingSet = Buffer(gpuData.context, CL_MEM_READ_WRITE, sizeof(Pixel) * gpuData.trainingSet.size() * MAX_TRAININGSETS);
+  gpuData.bigTrainingSet = new Pixel[MAX_TRAININGSETS * gpuData.trainingSet.size()];
+  for (int i = 0; i < MAX_TRAININGSETS ; i++) {
+    gpuData.queue.enqueueWriteBuffer(gpuData.bufferBigTrainingSet, CL_TRUE, i * gpuData.trainingSet.size() * sizeof(Pixel), sizeof(Pixel) * gpuData.trainingSet.size(), gpuData.trainingSet.data());
+  }
 
   return gpuData;
 }
@@ -518,48 +527,168 @@ Mat gpuKNearest1(Mat img, uint k, uint numThreads, GPUData gpuData) {
 
 Mat gpuKNearest2(Mat img, uint k, uint numThreads, GPUData gpuData) {
   int rows = img.rows, cols = img.cols;
+  double readStart, readEnd;
   Kernel kNearest2(gpuData.program, "kNearest2");
+  kNearest2.setArg(2, gpuData.bufferBigTrainingSet);
+  kNearest2.setArg(3, gpuData.trainingSet.size());
+  kNearest2.setArg(4, numThreads);
   RGBPixel *pixels = (RGBPixel *)(img.data);
-  for (int i = 0; i < rows * cols; i++) {
-    if (i % 1000 == 0)
+  Pixel *trainingSet;
+  for (int i = 0 ; i < rows * cols; i++) {
+    if (i % MAX_TRAININGSETS == 0 && i != 0) {
+      gpuData.queue.finish();
+      gpuData.queue.enqueueReadBuffer(gpuData.bufferBigTrainingSet, CL_TRUE, 0, sizeof(Pixel) * gpuData.trainingSet.size() * MAX_TRAININGSETS, gpuData.bigTrainingSet);
+
+
+      for (int j = 0; j < MAX_TRAININGSETS; j++) {
+        trainingSet = gpuData.bigTrainingSet + (j * gpuData.trainingSet.size());
+        // readStart = clock();
+        sort(trainingSet, trainingSet + gpuData.trainingSet.size(), comparison);
+        // readEnd = clock();
+        // cout << "READ GPU : " + to_string(getDuration(readStart, readEnd)) + "s" << endl;
+
+
+        // cout << trainingSet[0].cluster_id << ", " <<  trainingSet[0].distance << endl;
+        // break;
+        // Keep track of the frequencies for each classification
+        int freq0 = 0;
+        int freq1 = 0;
+
+        for (int i = 0; i < k; i++) {
+            // cout << trainingSet[i].cluster_id;
+            // cout << ", ";
+            // cout << trainingSet[i].distance;
+            // cout << " | ";
+            if (trainingSet[i].cluster_id == 0)
+                freq0++;
+            else if (trainingSet[i].cluster_id == 1)
+                freq1++;
+        }
+        // cout << ", done" << endl;
+        if (freq0 > freq1) {
+          pixels[j + i - MAX_TRAININGSETS].r = 0;
+          pixels[j + i - MAX_TRAININGSETS].g = 0;
+          pixels[j + i - MAX_TRAININGSETS].b = 0;
+          // cout << "yup" << endl;
+        }
+      }
       cout << i << endl;
+    }
+
     kNearest2.setArg(0, pixels[i]);
-    kNearest2.setArg(1, gpuData.bufferTrainingSet);
-    kNearest2.setArg(2, gpuData.trainingSet.size());
-    kNearest2.setArg(3, numThreads);
+    kNearest2.setArg(1, i % MAX_TRAININGSETS);
+
     gpuData.queue.enqueueNDRangeKernel(kNearest2, NullRange, numThreads, NullRange);
-    gpuData.queue.finish();
-    gpuData.queue.enqueueReadBuffer(gpuData.bufferTrainingSet, CL_TRUE, 0, sizeof(RGBPixel) * rows * cols, &gpuData.trainingSet[0]);
-
     // Sort the pixels by distance (shortest first)
-    sort(gpuData.trainingSet.begin(), gpuData.trainingSet.end(), comparison);
 
-    // Keep track of the frequencies for each classification
-    int freq0 = 0;
-    int freq1 = 0;
-
-    for (int i = 0; i < k; i++) {
-        cout << gpuData.trainingSet[i].cluster_id;
-        cout << ", ";
-        cout << gpuData.trainingSet[i].distance;
-        cout << " | ";
-        if (gpuData.trainingSet[i].cluster_id == 0)
-            freq0++;
-        else if (gpuData.trainingSet[i].cluster_id == 1)
-            freq1++;
-    }
-    cout << ", done" << endl;
-    if (freq0 < freq1) {
-      pixels[i].r = 255;
-      pixels[i].g = 255;
-      pixels[i].b = 255;
-    }
-    break;
   }
 
 
-  int classification = classifyPixel(gpuData.trainingSet, 5, pixels[0].r, pixels[0].g, pixels[0].b);
 
+  return img;
+}
+
+
+Mat gpuKNearest3(Mat img, uint k, uint numThreads, GPUData gpuData) {
+  int rows = img.rows, cols = img.cols;
+  Kernel kNearest2(gpuData.program, "kNearest2");
+  gpuData.queue.enqueueWriteBuffer(gpuData.bufferImage, CL_TRUE, 0, sizeof(uchar) * rows * cols * 3, img.data);
+
+  kNearest2.setArg(2, gpuData.bufferBigTrainingSet);
+  kNearest2.setArg(3, gpuData.trainingSet.size());
+  kNearest2.setArg(4, numThreads);
+
+  Kernel kNearest3(gpuData.program, "kNearest2Phase2");
+
+  kNearest3.setArg(0, gpuData.bufferImage);
+  kNearest3.setArg(1, gpuData.bufferBigTrainingSet);
+  kNearest3.setArg(2, k);
+  kNearest3.setArg(3, gpuData.trainingSet.size());
+  kNearest3.setArg(4, MAX_TRAININGSETS);
+  kNearest3.setArg(5, rows * cols);
+  RGBPixel *pixels = (RGBPixel *)(img.data);
+
+  for (int i = 0; i < rows * cols; i++) {
+    if (i % MAX_TRAININGSETS == 0 && i != 0) {
+      cout << i << endl;
+      gpuData.queue.finish();
+      kNearest3.setArg(6, i - MAX_TRAININGSETS);
+      gpuData.queue.enqueueNDRangeKernel(kNearest3, NullRange, MAX_TRAININGSETS, NullRange);
+      gpuData.queue.finish();
+      // gpuData.queue.enqueueReadBuffer(gpuData.bufferBigTrainingSet, CL_TRUE, 0, sizeof(Pixel) * gpuData.trainingSet.size() * MAX_TRAININGSETS, gpuData.bigTrainingSet);
+      // for (int i = 0; i < k; i++) {
+      //     cout << gpuData.bigTrainingSet[i].cluster_id;
+      //     cout << ", ";
+      //     cout << gpuData.bigTrainingSet[i].distance;
+      //     cout << " | ";
+      // }
+      // cout << ", done" << endl;
+
+    }
+    kNearest2.setArg(0, pixels[i]);
+    kNearest2.setArg(1, i % MAX_TRAININGSETS);
+    gpuData.queue.enqueueNDRangeKernel(kNearest2, NullRange, numThreads, NullRange);
+
+  }
+  gpuData.queue.enqueueReadBuffer(gpuData.bufferImage, CL_TRUE, 0, rows * cols * sizeof(RGBPixel), img.data);
+
+  return img;
+}
+
+
+Mat gpuKNearest4(Mat img, uint k, uint numThreads, GPUData gpuData) {
+  int rows = img.rows, cols = img.cols;
+  gpuData.bufferNeighbors = Buffer(gpuData.context, CL_MEM_READ_WRITE, sizeof(Pixel) * k);
+  gpuData.queue.enqueueWriteBuffer(gpuData.bufferImage, CL_TRUE, 0, sizeof(uchar) * rows * cols * 3, img.data);
+
+  Kernel kNearest4(gpuData.program, "kNearest4");
+  kNearest4.setArg(1, gpuData.bufferTrainingSet);
+  kNearest4.setArg(2, gpuData.trainingSet.size());
+  kNearest4.setArg(3, numThreads);
+
+  Kernel kNearest4Phase2(gpuData.program, "kNearest4Phase2");
+
+  kNearest4Phase2.setArg(0, gpuData.bufferTrainingSet);
+  kNearest4Phase2.setArg(1, gpuData.bufferNeighbors);
+  kNearest4Phase2.setArg(2, gpuData.trainingSet.size());
+  kNearest4Phase2.setArg(3, k);
+  kNearest4Phase2.setArg(4, numThreads);
+
+  RGBPixel *pixels = (RGBPixel *)(img.data);
+  Pixel neighbors[k * MAX_TRAININGSETS];
+
+
+  for (int i = 0; i < rows * cols; i++) {
+    if (i % MAX_TRAININGSETS == 0 && i != 0) {
+
+    }
+
+    kNearest4.setArg(0, pixels[i]);
+    gpuData.queue.enqueueNDRangeKernel(kNearest4, NullRange, numThreads, NullRange);
+    gpuData.queue.finish();
+    gpuData.queue.enqueueNDRangeKernel(kNearest4Phase2, NullRange, numThreads, NullRange);
+    gpuData.queue.finish();
+    gpuData.queue.enqueueReadBuffer(gpuData.bufferNeighbors, CL_TRUE, 0, sizeof(Pixel) * k, neighbors);
+    int freq0 = 0;
+    int freq1 = 0;
+
+    for (int j = 0; j < k; j++) {
+        // cout << trainingSet[i].cluster_id;
+        // cout << ", ";
+        // cout << trainingSet[i].distance;
+        // cout << " | ";
+        if (neighbors[j].cluster_id == 0)
+            freq0++;
+        else if (neighbors[j].cluster_id == 1)
+            freq1++;
+    }
+    // cout << ", done" << endl;
+    if (freq0 > freq1) {
+      pixels[i].r = 0;
+      pixels[i].g = 0;
+      pixels[i].b = 0;
+    }
+  }
   return img;
 }
 
@@ -568,7 +697,8 @@ Mat gpuKNearest2(Mat img, uint k, uint numThreads, GPUData gpuData) {
 
 int main(int argc, char** argv) {
 
-  GPUData gpuData = initGPU();
+  uint numThreads = 1000000;
+  GPUData gpuData = initGPU(numThreads);
   Mat src, srcGray, dst;
   std::vector<Mat> rawGrayImages;
   std::vector<Mat> rawRGBImages;
@@ -605,9 +735,12 @@ int main(int argc, char** argv) {
     // parsedImage = cpuRGBThreshold(img, 50, 200, 50, 200, 50, 200);
 
     // KNearest
-    parsedImage = cpuKNearest(img, gpuData.trainingSet);
-    // parsedImage = gpuKNearest1(img, 5, 5000, gpuData);
-    // parsedImage = gpuKNearest2(img, 5, 5000, gpuData);
+    // parsedImage = cpuKNearest(img, gpuData.trainingSet);
+    // parsedImage = gpuKNearest1(img, 5, 1, gpuData);
+    parsedImage = gpuKNearest4(img, 5, numThreads, gpuData);
+    // parsedImage = gpuKNearest3(img, 5, numThreads, gpuData);
+
+    printf("done\n");
     namedWindow("Threshold Test", CV_WINDOW_AUTOSIZE);
     imshow("Threshold Test", parsedImage);
     waitKey(0);
