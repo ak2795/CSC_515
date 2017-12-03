@@ -16,6 +16,12 @@ struct Pixel {
     unsigned int distance;
 };
 
+// Get the time difference given the start and the end
+double getDuration(double t1, double t2) {
+    double duration = t2 - t1;
+    return duration / CLOCKS_PER_SEC;
+}
+
 /*
  * Apply the mask to the image and output the result
  * */
@@ -38,7 +44,6 @@ Mat maskImg(String imPath, String mskPath) {
 /*
  * Apply the inverted version of the mask to the image and output the result
  * */
-
 Mat maskImgInverted(String imPath, String mskPath) {
     Mat mask, invMask, image, result;
 
@@ -67,7 +72,7 @@ vector<Pixel> createTrainingSet() {
     // For every image in the training folder mask images for strawberry and non-strawberry pixels
     // and add them to the training set vector
     for (int i = 0; i < 1; i++) {
-        cout << "Image " + to_string(i + 1) << endl;
+        cout << "Training image " + to_string(i + 1) << endl;
         imFile = "PartA/s" + to_string(i + 10) + ".jpg";
         mskFile = "PartA_Masks/s" + to_string(i + 10) + ".jpg";
         strawberry = maskImg(imFile, mskFile);
@@ -75,8 +80,6 @@ vector<Pixel> createTrainingSet() {
         
 
         // ********** STRAWBERRY PIXELS ***********
-        cout << "Parsing strawberry pixels for training set." << endl;
-
         // split the r, g, and b channels and create new pixel object
         int sRows = strawberry.rows;
         int sCols = strawberry.cols;
@@ -90,9 +93,6 @@ vector<Pixel> createTrainingSet() {
                 g = color[1];
                 r = color[2];
                 if (b || g || r) {
-                    //cout << "R:" + to_string(r);
-                    //cout << " G:" + to_string(g);
-                    //cout << " B:" + to_string(b) << endl;
                     // Create a Pixel object
                     Pixel pixel = {1, r, g, b, 0};
                     
@@ -104,8 +104,6 @@ vector<Pixel> createTrainingSet() {
         }
         
         // ********** NON-STRAWBERRY PIXELS ***********
-        cout << "Parsing non-strawberry pixels for training set." << endl;
-
         // split the r, g, and b channels and create new pixel object
         sRows = nonStrawberry.rows;
         sCols = nonStrawberry.cols;
@@ -129,7 +127,7 @@ vector<Pixel> createTrainingSet() {
             }
         }
     }
-    cout << "Training set size: " + to_string(trainingSet.size()) << endl;
+    cout << "Training Set Size: " + to_string(trainingSet.size()) + " pixels"  << endl;
     
     return trainingSet;
 }
@@ -160,7 +158,7 @@ unsigned int findDistance(unsigned int r1, unsigned int g1, unsigned int b1,
  * */
 unsigned int classifyPixel(vector<Pixel> trainingSet, int k, 
                             unsigned int r, unsigned int g, unsigned int b) {
-     
+    
     unsigned int n = trainingSet.size();
     // Go through the training set and find the distance between the input r, g, b
     for (int i = 0; i < n; i++) {
@@ -172,7 +170,7 @@ unsigned int classifyPixel(vector<Pixel> trainingSet, int k,
 
     // Keep track of the frequencies for each classification
     int freq0 = 0;
-    int freq1 = 1;
+    int freq1 = 0;
    
     for (int i = 0; i < k; i++) {
         if (trainingSet[i].cluster_id == 0)
@@ -180,7 +178,6 @@ unsigned int classifyPixel(vector<Pixel> trainingSet, int k,
         else if (trainingSet[i].cluster_id == 1)
             freq1++;
     }
-
     return (freq0 > freq1 ? 0 : 1);
 }
 
@@ -189,7 +186,14 @@ int main(int argc, char** argv) {
     Mat input;
     vector<Pixel> trainingSet;
     int sRows, sCols;
+    // TIMER VARIABLES
+    double progStart, progEnd;
+    double trainingStart, trainingEnd;
+    double classStart, classEnd;
+    double pixelStart, pixelEnd;
+    double pixelSum = 0, pixelCount = 0;
 
+    progStart = clock();
     // Read in input image to be classified
     // Check if there is an input image from the user
     if (argc < 2) {
@@ -203,24 +207,30 @@ int main(int argc, char** argv) {
         cout << "Input does not hold valid data" << endl;
         return -1;
     }
-
-    // Create the training set
-    trainingSet = createTrainingSet();
-
+    
     sRows = input.rows;
     sCols = input.cols;
+    cout << "Dimensions: " + to_string(sCols) + "x" + to_string(sRows) << endl;
+
+    // Create the training set
+    cout << "Creating training set" << endl;
+    trainingStart = clock();
+    trainingSet = createTrainingSet();
+    trainingEnd = clock();
+    // Print out the training set creation duration
+    cout << "Training Set Creation: " + to_string(getDuration(trainingStart, trainingEnd)) + "s" << endl;
 
     // Create the result matrix with the same dimensions as the input image
     Mat result(cv::Size(sCols, sRows), CV_8UC3);
     result = 0; // Initialize the matrix to all 0
 
     unsigned int r = 0, g = 0, b = 0; // to keep track of the rgb values
-
-    cout << sRows << endl;
-    cout << sCols << endl;
-
+    // Classify each pixel in the input image
+    classStart = clock();
     for (int j = 0; j < sRows; j++) {
         for (int k = 0; k < sCols; k++) {
+            // Classify each pixel one at a time
+            pixelStart = clock();
             // Get the current pixel values of the input image
             Vec3b color = input.at<Vec3b>(Point(k, j));
             b = color[0];
@@ -228,20 +238,32 @@ int main(int argc, char** argv) {
             r = color[2];
             
             // Classify the pixel after reading the r, g, and b values
-            // K = 5
-            int classification = classifyPixel(trainingSet, 5, r, g, b);
+            // K = 3
+            int classification = classifyPixel(trainingSet, 3, r, g, b);
             if (classification) {
                 // Set the pixel on the result matrix
                 result.at<Vec3b>(Point(k, j)) = color;
                 // Print out the position of the strawberry classified pixels
-                String position = "(" + to_string(k) + "," + to_string(j) + ")";
-                cout << "Location: " + position << endl;
+                // String position = "(" + to_string(k) + "," + to_string(j) + ")";
+                // cout << "Location: " + position << endl;
             }
+            // Timing calculation
+            pixelEnd = clock();
+            pixelSum += getDuration(pixelStart, pixelEnd);
+            pixelCount++;
         }
     }
 
-    imshow("Result", result);
-    waitKey(0);
+    cout << "Average Single Pixel Classification: " + to_string(pixelSum/pixelCount) + "s" << endl;
+    classEnd = clock();
+    cout << "Total Pixel Classification: " + to_string(getDuration(classStart, classEnd)) + "s"  << endl;
 
+    // Write image to results
+    // CHANGE THE FILENAME PER TEST
+    imwrite("Results/bts_c1k3.jpg", result);
+    //imshow("Result", result);
+    //waitKey(0);
+    progEnd = clock();
+    cout << "Program Runtime: " + to_string(getDuration(progStart, progEnd)) + "s" << endl;
     return 0; 
 }
