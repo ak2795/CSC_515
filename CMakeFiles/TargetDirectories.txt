@@ -1,0 +1,3 @@
+/Users/jangeja/School/CSC_515/CMakeFiles/rebuild_cache.dir
+/Users/jangeja/School/CSC_515/CMakeFiles/edit_cache.dir
+/Users/jangeja/School/CSC_515/CMakeFiles/main.dir

@@ -51,7 +51,7 @@ EQUALS = =
 CMAKE_SOURCE_DIR = /Users/jangeja/School/CSC_515/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/jangeja/School/CSC_515/src
+CMAKE_BINARY_DIR = /Users/jangeja/School/CSC_515
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jangeja/School/CSC_515/src/CMakeFiles /Users/jangeja/School/CSC_515/src/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jangeja/School/CSC_515/CMakeFiles /Users/jangeja/School/CSC_515/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jangeja/School/CSC_515/src/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jangeja/School/CSC_515/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
