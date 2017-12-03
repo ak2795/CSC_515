@@ -260,7 +260,7 @@ int main(int argc, char** argv) {
 
     // Write image to results
     // CHANGE THE FILENAME PER TEST
-    imwrite("Results/bts_c1k3.jpg", result);
+    imwrite("Results/bi_c6k3.jpg", result);
     //imshow("Result", result);
     //waitKey(0);
     progEnd = clock();
