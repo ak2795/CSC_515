@@ -126,7 +126,7 @@ void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
 }
 
 
-void kernel kNearest2(RGBPixel pixel, unsigned int index,
+void kernel kNearest2(const RGBPixel pixel, unsigned int index,
   global Pixel *trainingSets,
   const unsigned int trainingSetLength, const unsigned int numThreads) {
   unsigned int offset = get_global_id(0);
@@ -141,9 +141,7 @@ void kernel kNearest2(RGBPixel pixel, unsigned int index,
   }
 }
 
-
-
-void kernel kNearest4(RGBPixel pixel, global Pixel *trainingSet,
+void kernel kNearest4(const RGBPixel pixel, global Pixel *trainingSet,
   const unsigned int trainingSetLength, const unsigned int numThreads) {
   unsigned int offset = get_global_id(0);
   Pixel trainingPixel;
@@ -235,16 +233,28 @@ void kernel kNearest2Phase2(global RGBPixel *image, global Pixel *trainingSetArr
 
 
 
+void kernel kNearest5Phase2(global Pixel *trainingSets,
+  global Pixel *neighbors, const unsigned int trainingSetLength,
+  const unsigned int k, const unsigned int numThreads) {
 
-void kernel kNearest5(RGBPixel pixel, global Pixel *trainingSet,
-  const unsigned int trainingSetLength, const unsigned int numThreads) {
   unsigned int offset = get_global_id(0);
   Pixel trainingPixel;
-  while (offset < trainingSetLength) {
-    trainingPixel = trainingSet[offset];
-    trainingSet[offset].distance = sqrt((float)(pixel.r - trainingPixel.r) * (pixel.r - trainingPixel.r) +
-                  (pixel.g - trainingPixel.g) * (pixel.g - trainingPixel.g) +
-                  (pixel.b - trainingPixel.b) * (pixel.b - trainingPixel.b));
+
+  unsigned long long i, rank = 0, trainingSetStart, rankStart;
+
+  while (offset < trainingSetLength * MAX_TRAININGSETS) {
+    trainingSetStart = (offset / trainingSetLength) * trainingSetLength;
+    rankStart = (offset / trainingSetLength) * k;
+    trainingPixel = trainingSets[offset];
+
+    for (i = trainingSetStart; i < trainingSetStart + trainingSetLength; i++) {
+      if (trainingPixel.distance > trainingSets[i].distance) {
+        rank ++;
+      }
+    }
+    if (rank < k) {
+      neighbors[rankStart + rank] = trainingPixel;
+    }
     offset += numThreads;
   }
 }
