@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
             
             // Classify the pixel after reading the r, g, and b values
             // K = 3
-            int classification = classifyPixel(trainingSet, 3, r, g, b);
+            int classification = classifyPixel(trainingSet, 15, r, g, b);
             if (classification) {
                 // Set the pixel on the result matrix
                 result.at<Vec3b>(Point(k, j)) = color;
@@ -260,7 +260,7 @@ int main(int argc, char** argv) {
 
     // Write image to results
     // CHANGE THE FILENAME PER TEST
-    imwrite("Results/bi_c6k3.jpg", result);
+    imwrite("CPU_Results/base_c1k15.jpg", result);
     //imshow("Result", result);
     //waitKey(0);
     progEnd = clock();
