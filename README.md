@@ -104,10 +104,10 @@ completion. Example: ```./main img.jpg cpuBinaryThreshold show```
 
 ## Authors
 
-* **Joey Angeja** - *Initial work* - [jangeja94](https://github.com/jangeja94)
-* **Andrew Kim** - *Initial work* - [ak2795](https://github.com/ak2795)
+* **Joey Angeja** - *GPU Algorithms* - [jangeja94](https://github.com/jangeja94)
+* **Andrew Kim** - *CPU Algorithms* - [ak2795](https://github.com/ak2795)
 
-See also the list of [contributors](https://github.com/jangeja94/SqliteCaching/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/ak2795/CSC_515/contributors) who participated in this project.
 
 ## Acknowledgments
 
