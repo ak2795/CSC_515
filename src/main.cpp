@@ -111,8 +111,8 @@ using namespace cl;
      // and add them to the training set vector
      for (int i = 0; i < 1; i++) {
          cout << "Training image " + to_string(i + 1) << endl;
-         imFile = "PartA/s" + to_string(i + 17) + ".jpg";
-         mskFile = "PartA_Masks/s" + to_string(i + 17) + ".jpg";
+         imFile = "PartA/s" + to_string(i + 10) + ".jpg";
+         mskFile = "PartA_Masks/s" + to_string(i + 10) + ".jpg";
          strawberry = maskImg(imFile, mskFile);
          nonStrawberry = maskImgInverted(imFile, mskFile);
 
@@ -529,12 +529,15 @@ Mat gpuKNearest1(Mat img, uint k, uint numThreads, GPUData gpuData) {
 Mat gpuKNearest2(Mat img, uint k, uint numThreads, GPUData gpuData) {
   int rows = img.rows, cols = img.cols;
   double readStart, readEnd;
+  double classStart, classEnd;
+
   Kernel kNearest2(gpuData.program, "kNearest2");
   kNearest2.setArg(2, gpuData.bufferBigTrainingSet);
   kNearest2.setArg(3, gpuData.trainingSet.size());
   kNearest2.setArg(4, numThreads);
   RGBPixel *pixels = (RGBPixel *)(img.data);
   Pixel *trainingSet;
+  classStart = clock();
   for (int i = 0 ; i < rows * cols; i++) {
     if (i % MAX_TRAININGSETS == 0 && i != 0) {
       gpuData.queue.finish();
@@ -571,7 +574,7 @@ Mat gpuKNearest2(Mat img, uint k, uint numThreads, GPUData gpuData) {
           // cout << "yup" << endl;
         }
       }
-      cout << i << endl;
+      //cout << i << endl;
     }
 
     kNearest2.setArg(0, pixels[i]);
@@ -582,7 +585,8 @@ Mat gpuKNearest2(Mat img, uint k, uint numThreads, GPUData gpuData) {
 
   }
 
-
+  classEnd = clock();
+  cout << "Total Pixel Classification: " + to_string(getDuration(classStart, classEnd)) << endl;
 
   return img;
 }
@@ -774,6 +778,13 @@ int main(int argc, char** argv) {
   std::vector<Mat> rawGrayImages;
   std::vector<Mat> rawRGBImages;
   Mat parsedImage;
+
+  // TIMING VARIABLES
+  double progStart, progEnd;
+  double trainStart, trainEnd;
+
+  progStart = clock();
+
   if (argc < 2) {
    cout << "Must enter an image file" << endl;
    return -1;
@@ -790,7 +801,7 @@ int main(int argc, char** argv) {
     rawGrayImages.push_back(srcGray);
   }
 
-  for (auto &img : rawGrayImages) {
+  // for (auto &img : rawGrayImages) {
     // Binary thresholding
     // parsedImage = gpuBinaryThreshold(img, 100, 200, 6000, gpuData);
     // parsedImage = cpuBinaryThreshold(img, 100, 200);
@@ -798,7 +809,7 @@ int main(int argc, char** argv) {
     // namedWindow("Threshold Test", CV_WINDOW_AUTOSIZE);
     // imshow("Threshold Test", parsedImage);
     // waitKey(0);
-  }
+  // }
 
   for (auto &img : rawRGBImages) {
     // RGB thresholding
@@ -809,14 +820,17 @@ int main(int argc, char** argv) {
     // parsedImage = cpuKNearest(img, gpuData.trainingSet);
     // parsedImage = gpuKNearest1(img, 5, 1, gpuData);
     // parsedImage = gpuKNearest4(img, 5, numThreads, gpuData);
-    parsedImage = gpuKNearest5(img, 5, numThreads, gpuData);
+    parsedImage = gpuKNearest2(img, 3, numThreads, gpuData);
 
-    printf("done\n");
-    namedWindow("Threshold Test", CV_WINDOW_AUTOSIZE);
-    imshow("Threshold Test", parsedImage);
-    waitKey(0);
+    // printf("done\n");
+    // namedWindow("Threshold Test", CV_WINDOW_AUTOSIZE);
+    // imshow("Threshold Test", parsedImage);
+    // waitKey(0);
 
   }
+
+  progEnd = clock();
+  cout << "Program Runtime: " + to_string(getDuration(progStart, progEnd)) << endl;
 
   return 0;
 
