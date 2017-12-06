@@ -48,10 +48,10 @@ RM = /usr/local/Cellar/cmake/3.10.0/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/andrewkim/Desktop/CSC_515/src
+CMAKE_SOURCE_DIR = /Users/jangeja/School/CSC_515/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/andrewkim/Desktop/CSC_515/src
+CMAKE_BINARY_DIR = /Users/jangeja/School/CSC_515/src
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/andrewkim/Desktop/CSC_515/src/CMakeFiles /Users/andrewkim/Desktop/CSC_515/src/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jangeja/School/CSC_515/src/CMakeFiles /Users/jangeja/School/CSC_515/src/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/andrewkim/Desktop/CSC_515/src/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/jangeja/School/CSC_515/src/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named kmeans
+# Target rules for targets named main
 
 # Build rule for target.
-kmeans: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 kmeans
-.PHONY : kmeans
+main: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 main
+.PHONY : main
 
 # fast build rule for target.
-kmeans/fast:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
-.PHONY : kmeans/fast
+main/fast:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/build
+.PHONY : main/fast
 
-kmeans.o: kmeans.cpp.o
+main.o: main.cpp.o
 
-.PHONY : kmeans.o
+.PHONY : main.o
 
 # target to build an object file
-kmeans.cpp.o:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans.cpp.o
-.PHONY : kmeans.cpp.o
+main.cpp.o:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.cpp.o
+.PHONY : main.cpp.o
 
-kmeans.i: kmeans.cpp.i
+main.i: main.cpp.i
 
-.PHONY : kmeans.i
+.PHONY : main.i
 
 # target to preprocess a source file
-kmeans.cpp.i:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans.cpp.i
-.PHONY : kmeans.cpp.i
+main.cpp.i:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.cpp.i
+.PHONY : main.cpp.i
 
-kmeans.s: kmeans.cpp.s
+main.s: main.cpp.s
 
-.PHONY : kmeans.s
+.PHONY : main.s
 
 # target to generate assembly for a file
-kmeans.cpp.s:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans.cpp.s
-.PHONY : kmeans.cpp.s
+main.cpp.s:
+	$(MAKE) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 # Help Target
 help:
@@ -158,10 +158,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... kmeans"
-	@echo "... kmeans.o"
-	@echo "... kmeans.i"
-	@echo "... kmeans.s"
+	@echo "... main"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 .PHONY : help
 
 

@@ -384,8 +384,10 @@ void cpu() {
 }
 
 Mat cpuRGBThreshold(Mat img, uchar rMin, uchar rMax, uchar gMin, uchar gMax, uchar bMin, uchar bMax) {
-  unsigned int rows = img.rows;
-  unsigned int cols = img.cols;
+  double threshStart, threshEnd;
+  int rows = img.rows, cols = img.cols;
+  threshStart = clock();
+
   for (int i = 0; i < rows * cols; i++) {
     unsigned int offset = i * 3;
     unsigned char b = img.data[offset];
@@ -402,11 +404,18 @@ Mat cpuRGBThreshold(Mat img, uchar rMin, uchar rMax, uchar gMin, uchar gMax, uch
       img.data[offset + 2] = 0;
     }
   }
+  threshEnd = clock();
+
+  cout << "Total Pixel Thresholding: " + to_string(getDuration(threshStart, threshEnd)) << endl;
+
   return img;
 }
 
 Mat gpuRGBThreshold(Mat img, uchar rMin, uchar rMax, uchar gMin, uchar gMax, uchar bMin, uchar bMax, uint numThreads, GPUData gpuData) {
+  double threshStart, threshEnd;
   int rows = img.rows, cols = img.cols;
+  threshStart = clock();
+
   Kernel rgbThreshold(gpuData.program, "rgbThreshold");
   rgbThreshold.setArg(0, gpuData.bufferImage);
   rgbThreshold.setArg(1, rMin);
@@ -427,11 +436,17 @@ Mat gpuRGBThreshold(Mat img, uchar rMin, uchar rMax, uchar gMin, uchar gMax, uch
    // read result from GPU to here
    gpuData.queue.enqueueReadBuffer(gpuData.bufferImage, CL_TRUE, 0, sizeof(uchar)* rows * cols * 3, img.data);
 
+   threshEnd = clock();
+   cout << "Total Pixel Thresholding: " + to_string(getDuration(threshStart, threshEnd)) << endl;
+
    return img;
 }
 
 Mat cpuBinaryThreshold(Mat img, uchar lowerBound, uchar upperBound) {
+  double threshStart, threshEnd;
   int rows = img.rows, cols = img.cols;
+  threshStart = clock();
+
   for (int i = 0; i < rows * cols; i++) {
     if (img.data[i] >= lowerBound && img.data[i] <= upperBound) {
       img.data[i] = 255;
@@ -440,11 +455,16 @@ Mat cpuBinaryThreshold(Mat img, uchar lowerBound, uchar upperBound) {
       img.data[i] = 0;
     }
   }
+  threshEnd = clock();
+  cout << "Total Pixel Thresholding: " + to_string(getDuration(threshStart, threshEnd)) << endl;
   return img;
 }
 
 Mat gpuBinaryThreshold(Mat img, uchar lowerBound, uchar upperBound, uint numThreads, GPUData gpuData) {
+  double threshStart, threshEnd;
   int rows = img.rows, cols = img.cols;
+  threshStart = clock();
+
   Kernel binaryThreshold(gpuData.program, "binaryThreshold");
   gpuData.queue.enqueueWriteBuffer(gpuData.bufferImage, CL_TRUE, 0, sizeof(uchar) * rows * cols, img.data);
 
@@ -459,11 +479,15 @@ Mat gpuBinaryThreshold(Mat img, uchar lowerBound, uchar upperBound, uint numThre
 
   // read result from GPU to here
   gpuData.queue.enqueueReadBuffer(gpuData.bufferImage, CL_TRUE, 0, sizeof(uchar) * rows * cols, img.data);
+  threshEnd = clock();
+  cout << "Total Pixel Thresholding: " + to_string(getDuration(threshStart, threshEnd)) << endl;
   return img;
 }
 
 Mat cpuKNearest(Mat img, vector<Pixel> trainingSet, int kNeighbors) {
   int sRows, sCols;
+  double classStart, classEnd;
+  classStart = clock();
 
   sRows = img.rows;
   sCols = img.cols;
@@ -493,6 +517,8 @@ Mat cpuKNearest(Mat img, vector<Pixel> trainingSet, int kNeighbors) {
           }
       }
   }
+  classEnd = clock();
+  cout << "Total Pixel Classification: " + to_string(getDuration(classStart, classEnd)) << endl;
   return result;
 }
 
