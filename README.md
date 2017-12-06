@@ -94,6 +94,13 @@ completion. Example: ```./main img.jpg cpuBinaryThreshold show```
     * k - The number of nearest neighbors you would like to compare the pixel to
     * numThreads - The number of threads you would like to be spawned on the GPUs
 
+5. ```gpuKnearest2 k numthreads```
+    * k - The number of nearest neighbors you would like to compare the pixel to
+    * numThreads - The number of threads you would like to be spawned on the GPUs
+
+5. ```cpuKnearest k```
+    * k - The number of nearest neighbors you would like to compare the pixel to
+
 
 ## Authors
 
