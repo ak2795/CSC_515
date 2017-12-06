@@ -39,6 +39,7 @@ If you would like the image to show after the algorithm has run, the last
 argument should be ```show```. By default, the images do not show upon
 completion. Example: ```./main img.jpg cpuBinaryThreshold show```
 
+
 1. ```gpuBinaryThreshold min max numThreads```
     * min - The minimum grayscale value that the pixels must have to turn the
     pixel white.
@@ -46,11 +47,13 @@ completion. Example: ```./main img.jpg cpuBinaryThreshold show```
     pixel white
     * numThreads - The number of threads you would like to be spawned on the GPUs
 
+
 2. ```cpuBinaryThreshold min max```
     * min - The minimum grayscale value that the pixels must have to turn the
     pixel white.
     * max - The maximum grayscale value that the pixels must have to turn the
     pixel white
+
 
 3. ```gpuRGBThreshold rMin rMax gMin gMax bMin bMax numThreads```
     * rMin - The minimum red component that the pixels must have to turn the
@@ -67,20 +70,27 @@ completion. Example: ```./main img.jpg cpuBinaryThreshold show```
     pixel white
     * numThreads - The number of threads you would like to be spawned on the GPUs
 
-4. ```cpuRGBThreshold rMin rMax gMin gMax bMin bMax```
-  * rMin - The minimum red component that the pixels must have to turn the
-    pixel white.
-  * rMax - The maximum red component that the pixels must have to turn the
-    pixel white
-  * gMin - The minimum green component that the pixels must have to turn the
-    pixel white.
-  * gMax - The maximum green component that the pixels must have to turn the
-    pixel white
-  * bMin - The minimum blue component that the pixels must have to turn the
-    pixel white.
-  * bMax - The maximum blue component that the pixels must have to turn the
-    pixel white
 
+4. ```cpuRGBThreshold rMin rMax gMin gMax bMin bMax```
+    * rMin - The minimum red component that the pixels must have to turn the
+      pixel white.
+    * rMax - The maximum red component that the pixels must have to turn the
+      pixel white
+    * gMin - The minimum green component that the pixels must have to turn the
+      pixel white.
+    * gMax - The maximum green component that the pixels must have to turn the
+      pixel white
+    * bMin - The minimum blue component that the pixels must have to turn the
+      pixel white.
+    * bMax - The maximum blue component that the pixels must have to turn the
+      pixel white
+
+
+5. ```gpuKnearest1 k numthreads```
+    This function is much faster than the gpuKNearest2. We included gpuKNearest2
+    for comparison purposes.
+    * k - The number of nearest neighbors you would like to compare the pixel to
+    * numThreads - The number of threads you would like to be spawned on the GPUs
 
 
 ## Authors
