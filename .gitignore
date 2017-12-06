@@ -3,5 +3,6 @@ src/cmake_install.cmake
 src/main
 src/main.o
 src/CMakeFiles/*
+src/Makefile
 .DS_Store
 **/.DS_Store
