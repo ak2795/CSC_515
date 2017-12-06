@@ -1,5 +1,7 @@
 # cmake needs this line
 cmake_minimum_required(VERSION 2.8)
+set (CMAKE_CXX_STANDARD 11)
+
 
 # Define project name
 project(CV_Optimization)
@@ -8,6 +10,8 @@ project(CV_Optimization)
 # to the absolute path to the directory containing OpenCVConfig.cmake file
 # via the command line or GUI
 find_package(OpenCV REQUIRED)
+find_package(OpenCL REQUIRED)
+
 
 # If the package has been found, several variables will
 # be set, you can find the full list with descriptions
@@ -23,8 +27,12 @@ if(CMAKE_VERSION VERSION_LESS "2.8.11")
   include_directories(${OpenCV_INCLUDE_DIRS})
 endif()
 
+
+
+
 # Declare the executable target built from your sources
 add_executable(kmeans kmeans.cpp)
 
 # Link your application with OpenCV libraries
-target_link_libraries(kmeans ${OpenCV_LIBS})
+target_link_libraries(main ${OpenCV_LIBS})
+target_link_libraries(main OpenCL::OpenCL)
