@@ -63,7 +63,7 @@ void kernel binaryThreshold(global unsigned char* image,
   }
 }
 
-void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
+void kernel FailedkNearest1(global RGBPixel *image, global Pixel *trainingSet,
   const unsigned int trainingSetLength, const unsigned int numK,
   const unsigned int numThreads, const unsigned int numPixels) {
 
@@ -126,7 +126,7 @@ void kernel kNearest1(global RGBPixel *image, global Pixel *trainingSet,
 }
 
 
-void kernel kNearest2(const RGBPixel pixel, unsigned int index,
+void kernel kNearest1(const RGBPixel pixel, unsigned int index,
   global Pixel *trainingSets,
   const unsigned int trainingSetLength, const unsigned int numThreads) {
   unsigned int offset = get_global_id(0);
@@ -141,20 +141,7 @@ void kernel kNearest2(const RGBPixel pixel, unsigned int index,
   }
 }
 
-void kernel kNearest4(const RGBPixel pixel, global Pixel *trainingSet,
-  const unsigned int trainingSetLength, const unsigned int numThreads) {
-  unsigned int offset = get_global_id(0);
-  Pixel trainingPixel;
-  while (offset < trainingSetLength) {
-    trainingPixel = trainingSet[offset];
-    trainingSet[offset].distance = sqrt((float)(pixel.r - trainingPixel.r) * (pixel.r - trainingPixel.r) +
-                  (pixel.g - trainingPixel.g) * (pixel.g - trainingPixel.g) +
-                  (pixel.b - trainingPixel.b) * (pixel.b - trainingPixel.b));
-    offset += numThreads;
-  }
-}
-
-void kernel kNearest4Phase2(global Pixel *trainingSet,
+void kernel kNearest2Phase2(global Pixel *trainingSet,
   global Pixel *neighbors, const unsigned int trainingSetLength,
   const unsigned int k, const unsigned int numThreads) {
 
@@ -175,7 +162,7 @@ void kernel kNearest4Phase2(global Pixel *trainingSet,
   }
 }
 
-void kernel kNearest2Phase2(global RGBPixel *image, global Pixel *trainingSetArray,
+void kernel FailedkNearest2Phase2(global RGBPixel *image, global Pixel *trainingSetArray,
   const unsigned int k, const unsigned int trainingSetLength, const unsigned int numThreads,
   const unsigned int numPixels, const unsigned int indexOffset) {
 
@@ -233,7 +220,7 @@ void kernel kNearest2Phase2(global RGBPixel *image, global Pixel *trainingSetArr
 
 
 
-void kernel kNearest5Phase2(global Pixel *trainingSets,
+void kernel FailedkNearest3Phase2(global Pixel *trainingSets,
   global Pixel *neighbors, const unsigned int trainingSetLength,
   const unsigned int k, const unsigned int numThreads) {
 
