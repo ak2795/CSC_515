@@ -87,6 +87,8 @@ completion. Example: ```./main img.jpg cpuBinaryThreshold show```
 
 
 5. ```gpuKnearest1 k numthreads```
+
+
     This function is much faster than the gpuKNearest2. We included gpuKNearest2
     for comparison purposes.
     * k - The number of nearest neighbors you would like to compare the pixel to
